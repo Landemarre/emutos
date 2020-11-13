@@ -168,6 +168,22 @@
 #define VREG_BOARD_VCD32    0x08
 #define VREG_BOARD_Future   0x09
 
+#include "videl.h"
+/* SAGA video mode */
+#define SAGA_VIDEO_FORMAT_OFF    0x0 /* video out */
+#define SAGA_VIDEO_FORMAT_CLUT8  0x1 /* 8bit chuncky */
+#define SAGA_VIDEO_FORMAT_RGB16  0x2 /* R5G6B5 */
+#define SAGA_VIDEO_FORMAT_RGB15  0x3 /* X1R5G5B5 */
+#define SAGA_VIDEO_FORMAT_RGB24  0x4 /* R8G8B8 */
+#define SAGA_VIDEO_FORMAT_RGB32  0x5 /* X8R8G8B8 */
+#define SAGA_VIDEO_FORMAT_YUV422 0x6 /* Y4U2V2 */
+#define SAGA_VIDEO_FORMAT_STHIGH 0x8 /* Atari STHIGH format (1 plane)*/
+#define SAGA_VIDEO_FORMAT_STMID  0x9 /* Atari STMID format (2 plane) */
+#define SAGA_VIDEO_FORMAT_STLOW  0xA /* Atari STLOW format (4 plane) */ 
+
+#define SAGA_VIDEO_PALV4SA  *(volatile ULONG*)0xdff388 /* only 1 register format : IRGB where I is index on 8 bits */
+#define SAGA_VIDEO_mode     *(volatile UWORD*)0xdff1f4 /* set video mode */
+
 #endif /* CONF_WITH_APOLLO_68080 */
 
 /******************************************************************************/
@@ -506,13 +522,215 @@ void amiga_add_alt_ram(void)
 UWORD amiga_screen_width;
 UWORD amiga_screen_width_in_bytes;
 UWORD amiga_screen_height;
+
 const UBYTE *amiga_screenbase;
 UWORD *copper_list;
+
+#if CONF_WITH_APOLLO_68080
+WORD amiga_videlmode;
+UWORD amiga_mode=0;
+
+ULONG amiga_initial_vram_size(void)
+{
+    return 1280UL * 720UL * 2UL; /* for future possible 16 bits screen formatwhen Emutos will be able to support need ???*/
+}
+
+static void amiga_new_saga_set_videomode(UWORD rezmod)
+{
+	switch(rezmod)
+	{
+		case 1:
+		   amiga_screen_width = 320;
+    		   amiga_screen_height = 200;
+		break;
+		case 2:
+			amiga_screen_width = 320;
+    			amiga_screen_height = 240;
+    			
+		break;
+		case 3:
+			amiga_screen_width = 320;
+    			amiga_screen_height = 256;
+		break;
+		case 4:
+			amiga_screen_width = 640;
+    			amiga_screen_height = 400;
+		break;
+		case 5:
+			amiga_screen_width = 640;
+    			amiga_screen_height = 480;
+		break;
+		case 6:
+			amiga_screen_width = 640;
+    			amiga_screen_height = 512;
+		break;
+		case 7:
+			amiga_screen_width = 960;
+    			amiga_screen_height = 540;
+		break;
+		case 8:
+			amiga_screen_width = 480;
+    			amiga_screen_height = 270;
+		break;
+		case 9:
+			amiga_screen_width = 304;
+    			amiga_screen_height = 224;
+		break;
+		case 0x0A:
+			amiga_screen_width = 1280;
+    			amiga_screen_height = 720;
+		break;
+		case 0x0B:
+			amiga_screen_width = 640;
+    			amiga_screen_height = 360;
+		break;
+		default:
+			amiga_screen_width = 960;
+    			amiga_screen_height = 540;
+    		break;
+	}
+	
+	SAGA_VIDEO_PALV4SA=0xFFFFFFL; /* white */
+    	SAGA_VIDEO_PALV4SA=100000000L;          /* black */
+    	SAGA_VIDEO_PALV4SA=0x20000FFL;
+    	SAGA_VIDEO_PALV4SA=0x300FF00L;
+    	SAGA_VIDEO_PALV4SA=0x4FF0000L;
+	
+    if(amiga_mode==0)
+    {
+        SAGA_VIDEO_mode=(rezmod<<8) + SAGA_VIDEO_FORMAT_STLOW;
+    }
+    if(amiga_mode==1)
+    {
+        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_STMID;
+     }
+    if(amiga_mode==2)
+    {
+         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_STHIGH;
+     }
+    if(amiga_mode==9)
+    {
+         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_CLUT8;
+    }
+    if(amiga_mode==10)
+    {
+         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_YUV422;
+    }
+    if(amiga_mode==15)
+    {
+         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB15;
+    }
+    if(amiga_mode==16)
+    {
+        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB16;
+    }
+    if(amiga_mode==24)
+    {
+        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB24;
+    }
+    if(amiga_mode==32)
+    {
+        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB32;
+    }
+    if (amiga_screen_width == 640 && amiga_screen_height == 400 && amiga_mode==2)
+       sshiftmod = ST_HIGH;
+    else
+    if (amiga_screen_width == 640 && amiga_screen_height == 200 && amiga_mode==1)
+       sshiftmod = ST_MEDIUM;
+    else
+    if (/*amiga_screen_width == 640 && amiga_screen_height == 400 &&*/ amiga_mode==1) /* as on new core 640*200 is not possible */
+       sshiftmod = ST_MEDIUM;
+    else
+    if (amiga_screen_width == 320 && amiga_screen_height == 200 && amiga_mode==0)
+       sshiftmod = ST_LOW;
+    else
+       sshiftmod = FALCON_REZ;
+    amiga_screen_width_in_bytes = amiga_screen_width / 8;   
+} 
+
+WORD amiga_check_moderez(WORD moderez)
+{   /* this routine decide off the size of screen desktop at start regarding rez mode */
+    WORD current_mode, return_mode;
+
+    if (moderez == 0xff07) /* TT mid */
+        moderez = VIDEL_COMPAT|VIDEL_4BPP|VIDEL_80COL|VIDEL_VERTICAL;
+    else
+    if (moderez == 0xff02) /* ST High */
+        moderez = VIDEL_COMPAT|VIDEL_1BPP|VIDEL_80COL;
+    else    
+    if (moderez == 0xff01) /* ST Mid */
+        moderez = VIDEL_COMPAT|VIDEL_2BPP|VIDEL_80COL;
+    else    /* TT mid for STLow by default */
+        moderez = VIDEL_COMPAT|VIDEL_4BPP|VIDEL_80COL|VIDEL_VERTICAL;
+
+    current_mode = amiga_vgetmode();
+    return_mode = moderez;          /* assume always valid */
+    return (return_mode==current_mode)?0:return_mode;
+}
+
+void amiga_get_current_mode_info(UWORD *planes, UWORD *hz_rez, UWORD *vt_rez) /* atari 8 planes not supported by Saga for the moment */
+{
+    switch (amiga_mode)
+    {
+        case 0 :
+            *planes = 4;
+        break;  
+        case 1 :
+            *planes = 2;
+        break;     
+        case 8 :
+            *planes = 8;
+        break;
+        case 9 :
+            *planes = 8;
+        break;
+        case 10 :
+            *planes = 8;
+        break;
+        case 15 :
+            *planes = 16;
+        break;
+        case 16 :
+            *planes = 16;
+        break;  
+        case 24 :
+            *planes = 24;
+        break; 
+        case 32 :
+            *planes = 32;
+        break;
+        case 2:    
+        default :
+            *planes = 1;
+        break;
+    }    
+    *hz_rez = amiga_screen_width;
+    *vt_rez = amiga_screen_height;
+}
+
+void amiga_screen_init(void)
+{   amiga_videlmode=amiga_mode=0;
+    amiga_videlmode|=0xff00;
+    amiga_videlmode=amiga_check_moderez(amiga_videlmode);
+    amiga_setrez(FALCON_REZ, amiga_videlmode);
+    /* Enable VBL interrupt */
+    VEC_LEVEL3 = amiga_vbl;
+    INTENA = SETBITS | INTEN | VERTB;
+    /* Enable sound interrupt in same time */
+   /* VEC_LEVEL4 = amiga_sound;
+    INTENA = SETBITS | INTEN | VERTB | AUD0;*/
+    /* Start the DMA, with bit plane and Copper */
+    DMACON = SETBITS | COPEN | BPLEN | DMAEN;
+
+}
+
+#else
 
 ULONG amiga_initial_vram_size(void)
 {
     return 640UL * 512 / 8;
 }
+
 
 static void amiga_set_videomode(UWORD width, UWORD height)
 {
@@ -578,6 +796,7 @@ static void amiga_set_videomode(UWORD width, UWORD height)
         sshiftmod = FALCON_REZ;
 }
 
+
 WORD amiga_check_moderez(WORD moderez)
 {
     WORD current_mode, return_mode;
@@ -641,6 +860,7 @@ void amiga_screen_init(void)
     /* Start the DMA, with bit plane and Copper */
     DMACON = SETBITS | COPEN | BPLEN | DMAEN;
 }
+#endif
 
 void amiga_setphys(const UBYTE *addr)
 {
@@ -653,6 +873,357 @@ const UBYTE *amiga_physbase(void)
     return amiga_screenbase;
 }
 
+#if CONF_WITH_APOLLO_68080
+
+
+WORD amiga_setcolor(WORD colorNum, WORD color)
+{	static WORD oldpalette[256];
+    WORD oldcolor;
+
+    ULONG newcolor=(ULONG)color;
+
+    KDEBUG(("Setcolor(0x%04x, 0x%04x)\n", colorNum, color));
+
+    colorNum &= 0x00f;         /* just like real TOS */
+    if (colorNum==0 && color!=0)
+    {
+    	/*new_*/amiga_setcolor(1, 0);
+    	return oldpalette[colorNum];
+    }
+    oldcolor= oldpalette[colorNum];
+    if (HAS_VIDEL || HAS_TT_SHIFTER || HAS_STE_SHIFTER)
+    {
+       /* mask = 0x0fff; */
+        SAGA_VIDEO_PALV4SA = ((ULONG)colorNum)<<24 | ((newcolor&0xFL)<<4)|((newcolor&0xF0L)<<8)|((newcolor&0xF00L)<<12); 
+        oldpalette[colorNum]=color;
+    }
+    else
+    {
+       /* mask = 0x0777;*/
+       SAGA_VIDEO_PALV4SA = ((ULONG)colorNum)<<24 | ((newcolor&0x7L)<<5)|((newcolor&0x70L)<<9)|((newcolor&0x700L)<<13); 
+        oldpalette[colorNum]=color;
+    }
+  
+    return oldcolor;
+}
+
+
+
+/* émulation fonctions videl */
+static ULONG sys_palette[256];
+
+WORD vsetrgb(WORD index,WORD count,const ULONG *rgb)
+{	int i=0;
+	count &=0xFF;
+	while(i<count)
+	{
+		sys_palette[index] = *rgb&0xFFFFFFL;
+		SAGA_VIDEO_PALV4SA = ((((ULONG)index)<<24) | (*rgb&0xFFFFFFL));
+		i++;
+		index++;
+		rgb++;
+	}
+	return 0; /* OK */
+}
+
+WORD vgetrgb(WORD index,WORD count, ULONG *rgb)
+{	int i=0;
+	count &=0xFF;
+	while(i<count)
+	{
+		
+		*rgb++=sys_palette[index];
+		i++;
+		index++;
+	}
+	return 0; /* OK */
+}
+
+/*
+ * Get Videl monitor type
+ */
+WORD vmontype(void)
+{
+ /*	if((amiga_screen_width==640) && (amiga_screen_height == 400) && (amiga_mode==2)) return 0;
+ 	if(amiga_mode<2) return 1;*/
+ 	return 2;	
+}
+
+LONG vgetsize(WORD mode)  
+{
+	return amiga_screen_width * amiga_screen_height * 4; /* a corriger */
+}
+
+WORD vsetsync(WORD external)
+{
+	return 0; /* OK nothing to do */
+}
+
+WORD vsetmode(WORD mode)
+{
+    if (mode == -1) return amiga_videlmode;
+    amiga_setrez(3, mode);
+    return amiga_videlmode;   
+}
+
+/* End videl Emulation */
+
+/*
+Modes de Saga
+  		-- 1 = 320x200  x2 x2
+                -- 2 = 320x240  x2 x2
+                -- 3 = 320x256  x2 x2
+                -- 4 = 640x400  x1 x1
+                -- 5 = 640x480  x1 x1
+                -- 6 = 640x512  x1 x1
+                -- 7 = 960x540  x1 x1 
+                -- 8 = 480x270  x2 x2 
+                -- 9 = 304x224  x2 x2 for neogeo
+                -- A = 1280x720
+                -- B = 640x360
+*/
+
+void amiga_setrez(WORD rez, WORD videlmode)
+{
+    UWORD new_rez;
+    switch(rez)
+    {
+        case ST_LOW : /* 0 */
+            amiga_mode=0;
+            amiga_videlmode = VIDEL_COMPAT|VIDEL_4BPP;
+            new_rez=1; /* 320*200 */
+        break;
+        case ST_MEDIUM : /* 1 */
+            amiga_mode=1;
+            amiga_videlmode = VIDEL_COMPAT|VIDEL_2BPP|VIDEL_80COL;
+            new_rez=7; /* 960*540 */ /* comme on n'a pas la bonne rez et quasiment pas utilisé alors autant mettre le maxi */
+        break;
+        case ST_HIGH :  /* 2 */
+            amiga_mode=2;
+            amiga_videlmode = VIDEL_COMPAT|VIDEL_1BPP|VIDEL_80COL;
+            new_rez=4; /* 640*400 */
+        break;
+        case 3 : /* Falcon like rez */
+            amiga_videlmode = videlmode;
+            switch(videlmode & (VIDEL_BPPMASK))
+            {
+                case VIDEL_4BPP:
+                    if(videlmode & VIDEL_COMPAT)
+		    {
+		        new_rez=1; /* 320*200 */
+                        if((videlmode & VIDEL_80COL)&&(videlmode & VIDEL_VERTICAL)) /* TT Mid */
+			{
+                            new_rez=5; /* 640*480 */
+			}
+
+                    }
+                    else
+                    {
+                        new_rez=2; /* 320x240 */
+                        if(videlmode & VIDEL_80COL)
+                        {
+                            new_rez=4; /* 640x400 */
+                        }
+                        if(videlmode & VIDEL_VERTICAL)
+                        {   
+                            new_rez=5; /* 640x480 */
+                        }
+                        if(videlmode & VIDEL_VGA)
+                        {
+                            new_rez=7; /* 960x540 */
+                        }
+                        if(videlmode & VIDEL_PAL)
+                        {  
+                            new_rez=6; /* 640x512 */
+                        }
+                    }
+                    amiga_mode=0;
+                break;
+                case VIDEL_2BPP:
+                    if(videlmode & VIDEL_COMPAT)
+                    {
+                        new_rez=4; /* 640x400 */ /* 640 * 200 not available */
+                    }
+                    else
+                    {
+                        new_rez=4; /* 640x400 */
+                        if(videlmode & VIDEL_VERTICAL)
+                        {   
+                            new_rez=5; /* 640x480 */
+                        }
+                        if(videlmode & VIDEL_VGA)
+                        {   
+                            new_rez=7; /* 960x540 */
+                        }
+                        if(videlmode & VIDEL_PAL)
+                        {   
+                            new_rez=6; /* 640x512 */
+                        }
+                    }
+                    amiga_mode=1;
+                break;
+                case VIDEL_1BPP:
+                    if(videlmode & VIDEL_COMPAT)
+                    {
+                        new_rez=4; /* 640x400 */
+                    }
+                    else
+                    {
+                        new_rez=5; /* 640x480 */
+                        if(videlmode & VIDEL_VGA)
+                        {   
+                            new_rez=7; /* 960x540 */
+                        }
+                        if(videlmode & VIDEL_PAL)
+                        {   
+                            new_rez=6; /* 640x512 */
+                        }
+                    }
+                    amiga_mode=2;
+                break;
+                case VIDEL_TRUECOLOR:
+                    new_rez=5; /* 640x480 */
+                    if(videlmode & VIDEL_VGA)
+                    {   
+                        new_rez=7; /* 960x540 */
+                    }
+                    if(videlmode & VIDEL_PAL)
+                    {   
+                        new_rez=6; /* 640x512 */
+                    }
+                    amiga_mode=16;
+                break;
+                case VIDEL_24RGB:
+                    new_rez=5; /* 640x480 */
+                    if(videlmode & VIDEL_VGA)
+                    {   
+                        new_rez=7; /* 960x540 */
+                    }
+                    if(videlmode & VIDEL_PAL)
+                    {   
+                        new_rez=6; /* 640x512 */
+                    }
+                    amiga_mode=24;
+                break;
+                case VIDEL_32XRGB:
+                    new_rez=5; /* 640x480 */
+                    if(videlmode & VIDEL_VGA)
+                    {   
+                        new_rez=7; /* 960x540 */
+                    }
+                    if(videlmode & VIDEL_PAL)
+                    {   
+                        new_rez=6; /* 640x512 */
+                    }
+                    amiga_mode=32;
+                break;
+                
+                default : 
+                    new_rez=4; /*640x400 */
+                    if(videlmode & VIDEL_VGA)
+                    {
+                        new_rez=7; /* 960x540 */
+                    }
+                    if(videlmode & VIDEL_PAL)
+                    {   
+                        new_rez=6; /* 640x512 */
+                    }
+		    amiga_mode=0;
+                break;
+            }
+            if(videlmode & VIDEL_OVERSCAN)
+            {
+               new_rez=0x0A; /* 1280x720 */
+            }
+            if(videlmode & VIDEL_NEOGEO)
+            {
+               new_rez=9; /* 304*224 */
+            }
+        break;
+        case TT_MEDIUM: /* 4 */
+            amiga_mode=0;
+            amiga_videlmode = VIDEL_COMPAT|VIDEL_4BPP|VIDEL_80COL|VIDEL_VERTICAL;
+            new_rez=5; /* 640x480 */
+        break;
+        case TT_HIGH: /* 6 */	/* TTHigh not able on V4SA for the moment maximum value able to achieve in all case amiga_set_videomode() need to be updated if one day possible*/
+            amiga_mode=2;
+            amiga_videlmode = VIDEL_1BPP|VIDEL_80COL|VIDEL_VGA|VIDEL_OVERSCAN;
+            new_rez=0x0A; /* 1280x720 */ /* should be 1280*960 */
+        break;
+        case TT_LOW: /* 7 */
+            amiga_mode=0; /* should be for 256 color not 16 but Saga not support (November 2020)*/
+            amiga_videlmode = VIDEL_4BPP|VIDEL_VERTICAL;
+            new_rez=5; /* 640x480 */ /* should be 320*480 */
+        break;
+        default : 
+            amiga_mode=0;
+            amiga_videlmode = VIDEL_4BPP|VIDEL_80COL|VIDEL_VGA;
+            new_rez=7; /* 960x540 */
+        break;
+    }
+
+    amiga_new_saga_set_videomode(new_rez);
+
+}
+
+WORD amiga_vgetmode(void)
+{
+    WORD mode = VIDEL_1BPP;
+    switch(amiga_mode)
+    {
+        case 0:
+            mode = VIDEL_4BPP;
+            if((amiga_screen_width==320) && (amiga_screen_height == 200)) mode |= VIDEL_COMPAT;
+            if((amiga_screen_width==640) && (amiga_screen_height == 480)) mode |= VIDEL_COMPAT;
+        break;
+        case 1:
+            mode = VIDEL_2BPP;
+            if((amiga_screen_width==640) && (amiga_screen_height == 200)) mode |= VIDEL_COMPAT;
+            
+        break;
+        case 8: /* 8 plane interlaced */
+            mode = VIDEL_8BPP;
+        break;
+        case 9: /* 8 bits chuncky */
+            mode = VIDEL_8CHUNCKY;
+        break;
+ /*       case 15: / * X1R5G5B5 * /
+            mode = VIDEL_15XRGB;
+        break;*/
+        case 16:
+            mode = VIDEL_TRUECOLOR;
+        break;
+        case 24:
+           mode = VIDEL_24RGB;
+        break;
+        case 32:
+           mode = VIDEL_32XRGB;
+        break;
+/*        case 422:
+           mode = VIDEL_8YUV;
+        break;*/
+        case 2:
+        default:
+            mode = VIDEL_1BPP;
+            if((amiga_screen_width==640) && (amiga_screen_height == 400)) mode |= VIDEL_COMPAT;
+        break;
+    }
+    if (amiga_screen_width >= 640)
+        mode |= VIDEL_80COL;
+    if (amiga_screen_width > 640)
+        mode |= VIDEL_VGA;
+    if (amiga_screen_height == 480)
+		mode |= VIDEL_VERTICAL;
+    if ((amiga_screen_height == 450)||(amiga_screen_height == 512))
+		mode |= VIDEL_PAL;
+    if (amiga_screen_width >= 1280)
+    		mode |= VIDEL_OVERSCAN;
+    if (amiga_screen_height == 224)
+    		mode |= VIDEL_NEOGEO;
+    return mode;
+}
+
+#else
 WORD amiga_setcolor(WORD colorNum, WORD color)
 {
     KDEBUG(("amiga_setcolor(%d, 0x%04x)\n", colorNum, color));
@@ -706,6 +1277,7 @@ WORD amiga_vgetmode(void)
 
     return mode;
 }
+#endif
 
 /******************************************************************************/
 /* IKBD                                                                       */

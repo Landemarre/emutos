@@ -139,7 +139,12 @@ typedef void (*ETV_TIMER_T)(int ms); /* Type of BDOS Event Timer */
 #define TT_DUOCHROME_INVERT 0x0002      /* inversion bit in TT h/w palette reg 0 */
 
 /* bit settings for Falcon videomodes */
+#if CONF_WITH_APOLLO_68080
+#define VIDEL_VALID    0x07ff           /* the only bits allowed in a videomode */
+#define VIDEL_NEOGEO   0x0200           /* NeoGeo resolution 304*224 */
+#else
 #define VIDEL_VALID    0x01ff           /* the only bits allowed in a videomode */
+#endif
 #define VIDEL_VERTICAL 0x0100           /* if set, use interlace (TV), double line (VGA) */
 #define VIDEL_COMPAT   0x0080           /* ST-compatible if set */
 #define VIDEL_OVERSCAN 0x0040           /* overscan if set (not used with VGA) */
@@ -152,6 +157,9 @@ typedef void (*ETV_TIMER_T)(int ms); /* Type of BDOS Event Timer */
 #define VIDEL_4BPP          2               /* 16 colours */
 #define VIDEL_8BPP          3               /* 256 colours */
 #define VIDEL_TRUECOLOR     4               /* 65536 colours */
+#define VIDEL_24RGB         5               /* R8V8B8 */
+#define VIDEL_32XRGB	     6               /* X8R8V8B8 */
+#define VIDEL_8CHUNCKY      7               /* 256 colours chuncky mode */
 
 /* IDT cookie flag for 24 hour: 0 = 12am/pm or 1 = 24 hour */
 #define IDT_12H   0x0000

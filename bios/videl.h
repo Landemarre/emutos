@@ -14,7 +14,7 @@
 #ifndef VIDEL_H
 #define VIDEL_H
 
-#if CONF_WITH_VIDEL
+#if CONF_WITH_VIDEL || CONF_WITH_APOLLO_68080
 
 #define SPSHIFT             0xffff8266L
 
