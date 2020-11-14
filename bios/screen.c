@@ -784,7 +784,16 @@ void screen_get_current_mode_info(UWORD *planes, UWORD *hz_rez, UWORD *vt_rez)
 WORD get_palette(void)
 {
 #ifdef MACHINE_AMIGA
+#if CONF_WITH_APOLLO_68080
+       UWORD planes, hz_rez, vt_rez;
+       amiga_get_current_mode_info(planes, &hz_rez, &vt_rez);
+
+       if (planes == 1)
+            return 2;
+       return 4096;
+#else
     return 2;               /* we currently only support monochrome */
+#endif               /* we currently only support monochrome */
 #else
     WORD palette;
 
