@@ -204,7 +204,92 @@ WORD oldmode, oldbase, oldoptions;
 #endif
 
 #ifdef MACHINE_AMIGA
-/* This assumes that inside ADAMIREZ dialog, buttons are sorted
+#if CONF_WITH_APOLLO_68080
+static int change_amiga_rez(WORD *newres,WORD *newmode)
+{
+    OBJECT *tree, *obj;
+    int i, selected;
+    WORD oldmode;
+
+    
+
+    oldmode = amiga_vgetmode();
+    /* set up dialog & display */
+    tree = desk_rs_trees[ADSAGREZ];
+    for(i=SAHIGH; i<=SA169; i++) tree[i].ob_state &= ~SELECTED;
+    tree[SAOVER].ob_state &= ~SELECTED;
+    if(oldmode&VIDEL_COMPAT)
+    {
+        switch(oldmode&VIDEL_BPPMASK)
+        {
+            case VIDEL_1BPP:
+                tree[SAHIGH].ob_state |= SELECTED;
+            break;
+            case VIDEL_2BPP:
+                tree[SAMID].ob_state |= SELECTED;
+            break;
+            case VIDEL_4BPP:
+                if(oldmode&VIDEL_VERTICAL) tree[SATTMID].ob_state |= SELECTED;
+                else tree[SALOW].ob_state |= SELECTED;
+            break;
+            default:
+            break;
+        }
+    }
+    else
+    {
+        switch(oldmode&VIDEL_BPPMASK)
+        {
+            case VIDEL_1BPP:
+                tree[SA1].ob_state |= SELECTED;
+            break;
+            case VIDEL_2BPP:
+                tree[SA2].ob_state |= SELECTED;
+            break;
+            case VIDEL_4BPP:
+                tree[SA4].ob_state |= SELECTED;
+            break;
+            case VIDEL_TRUECOLOR:
+                tree[SA16].ob_state |= SELECTED;
+            break;
+            default:
+            break;
+        }
+        if (oldmode&VIDEL_OVERSCAN) tree[SAOVER].ob_state |= SELECTED;
+        else
+        if(oldmode&VIDEL_PAL) tree[SA169].ob_state |= SELECTED;
+        else
+        if(oldmode&VIDEL_VGA) tree[SASVGA].ob_state |= SELECTED;
+        else tree[SAVGA].ob_state |= SELECTED;
+    }
+    inf_show(tree,ROOT);
+
+    if (inf_what(tree,SAREZOK,SAREZCAN) == 0)
+        return 0;
+    *newres = 0;
+    *newmode = -1;
+    if(tree[SA1].ob_state&SELECTED) *newmode = VIDEL_1BPP;
+    if(tree[SA2].ob_state&SELECTED) *newmode = VIDEL_2BPP;
+    if(tree[SA4].ob_state&SELECTED) *newmode = VIDEL_4BPP;
+    if(tree[SA16].ob_state&SELECTED) *newmode = VIDEL_TRUECOLOR;
+    if(*newmode!=-1)
+    {   *newres = FALCON_REZ;
+        if(tree[SAOVER].ob_state&SELECTED) *newmode |= (VIDEL_80COL | VIDEL_VGA | VIDEL_OVERSCAN);
+        if(tree[SA169].ob_state&SELECTED) *newmode |= (VIDEL_80COL | VIDEL_VGA | VIDEL_PAL);
+        if(tree[SAVGA].ob_state&SELECTED) *newmode |= (VIDEL_80COL | VIDEL_VERTICAL);
+        if(tree[SASVGA].ob_state&SELECTED) *newmode |= VIDEL_VGA;
+    }
+    else
+    {
+        *newmode = 0;
+        if(tree[SAHIGH].ob_state&SELECTED) *newres = ST_HIGH;
+        if(tree[SAMID].ob_state&SELECTED) *newres = ST_MEDIUM;
+        if(tree[SALOW].ob_state&SELECTED) *newres = ST_LOW;
+        if(tree[SATTMID].ob_state&SELECTED) *newres = TT_MEDIUM;
+    }
+    return 1;
+}
+#else  /* standard Amiga rez *//* This assumes that inside ADAMIREZ dialog, buttons are sorted
  * left to right then top to bottom. */
 static const WORD amigamode_from_button[] =
 {
@@ -264,6 +349,7 @@ WORD oldmode;
 
     return 1;
 }
+#endif
 #endif
 
 /*
