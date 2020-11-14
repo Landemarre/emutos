@@ -252,6 +252,11 @@ _amiga_vbl:
         btst    #5,d0                   // VBL interrupt?
         jeq     amivblend
 
+#if CONF_WITH_APOLLO_68080
+        move.l  _amiga_screenbase,d0    // Video Base address
+        lea     0xdff1ec,a0             // SAGA_VIDEO_planeptr
+        move.l  d0,(a0)
+#else
         move.l  _amiga_screenbase,d0    // Video Base address
 
         tst.w   0xdff004                // VPOSR: Test bit 15 = LOF bit
@@ -266,6 +271,7 @@ setcopper:
         move.w  d0,10(a0)               // BPL1PTL
         swap    d0
         move.w  d0,6(a0)                // BPL1PTH
+#endif
 
         jbsr    _int_vbl                // Call the standard VBL handler
 
