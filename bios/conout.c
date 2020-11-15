@@ -46,6 +46,7 @@ static UBYTE *char_addr(WORD ch)
 {
     UWORD offs;
 
+    if (v_planes > 8) return NULL;
     /* test against limits */
     if (ch >= v_fnt_st) {
         if (ch <= v_fnt_nd) {
@@ -87,6 +88,7 @@ static UBYTE *cell_addr(UWORD x, UWORD y)
 {
     ULONG disx, disy;
 
+    if (v_planes > 8) return NULL;
     /* check bounds against screen limits */
     if (x > v_cel_mx)
         x = v_cel_mx;           /* clipped x */
@@ -142,6 +144,7 @@ static void cell_xfer(UBYTE *src, UBYTE *dst)
     int fnt_wr, line_wr;
     int plane;
 
+    if (v_planes > 8) return;
     fnt_wr = v_fnt_wr;
     line_wr = v_lin_wr;
 
@@ -229,6 +232,7 @@ static void neg_cell(UBYTE *cell)
     int cell_len = v_cel_ht;
     int lin_wr = v_lin_wr;
 
+    if (v_planes > 8) return;
     v_stat_0 |= M_CRIT;                 /* start of critical section. */
 
     for (plane = v_planes; plane--; ) {
@@ -258,6 +262,7 @@ static void neg_cell(UBYTE *cell)
 
 static BOOL next_cell(void)
 {
+    if (v_planes > 8) return 0;
     /* check bounds against screen limits */
     if (v_cur_cx == v_cel_mx) {         /* increment cell ptr */
         if (!(v_stat_0 & M_CEOL)) {
@@ -303,6 +308,7 @@ static BOOL next_cell(void)
 
 void invert_cell(int x, int y)
 {
+    if (v_planes > 8) return;
     /* fetch x and y coords and invert cursor. */
     neg_cell(cell_addr(x, y));
 }
@@ -322,6 +328,7 @@ void invert_cell(int x, int y)
 
 void move_cursor(int x, int y)
 {
+    if (v_planes > 8) return;
     /* update cell position */
 
     /* clamp x,y to valid ranges */
@@ -391,6 +398,7 @@ void ascii_out(int ch)
     UBYTE * src, * dst;
     BOOL visible;                       /* was the cursor visible? */
 
+    if (v_planes > 8) return;
     src = char_addr(ch);                /* a0 -> get character source */
     if (src == NULL)
         return;                         /* no valid character */
@@ -464,6 +472,7 @@ void blank_out(int topx, int topy, int botx, int boty)
     int pair, pairs, row, rows, offs;
     UBYTE * addr = cell_addr(topx, topy);   /* running pointer to screen */
 
+    if (v_planes > 8) return;
     /*
      * # of cell-pairs per row in region - 1
      *
@@ -560,6 +569,7 @@ void scroll_up(UWORD top_line)
     ULONG count;
     UBYTE * src, * dst;
 
+    if (v_planes > 8) return;
     /* screen base addr + cell y nbr * cell wrap */
     dst = v_bas_ad + (ULONG)top_line * v_cel_wr;
 
@@ -587,6 +597,7 @@ void scroll_down(UWORD start_line)
     ULONG count;
     UBYTE * src, * dst;
 
+    if (v_planes > 8) return;
     /* screen base addr + offset of start line */
     src = v_bas_ad + (ULONG)start_line * v_cel_wr;
 
