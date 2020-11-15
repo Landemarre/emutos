@@ -398,9 +398,20 @@ void vdi_v_opnwk(Vwk * vwk)
     /*
      * Programs can request a video mode switch by passing the desired
      * mode + 2 in INTIN[0]. Falcon-specific modes are currently not
-     * supported.
+     * supported except for SAGA
      */
     newrez = INTIN[0] - 2;
+    
+#if CONF_WITH_APOLLO_68080
+
+
+    if ((newrez != Getrez())||(newrez==3)) {
+        if(newrez==3) Setscreen(-1L, -1L, newrez, INTOUT[45]);
+        else Setscreen(-1L, -1L, newrez, 0);
+    }
+
+#else
+
     if (
         (newrez == ST_LOW) || (newrez == ST_MEDIUM) || (newrez == ST_HIGH)
 #if CONF_WITH_TT_SHIFTER
@@ -411,6 +422,7 @@ void vdi_v_opnwk(Vwk * vwk)
             Setscreen(-1L, -1L, newrez, 0);
         }
     }
+#endif
 
     /* We need to copy some initial table data from the ROM */
     for (i = 0; i < 12; i++) {
