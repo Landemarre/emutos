@@ -1390,7 +1390,7 @@ const PFLONG xbios_vecs[] = {
     xbios_unimpl,   /* 57 */
 #endif  /* CONF_WITH_TT_SHIFTER */
 
-#if CONF_WITH_VIDEL
+#if CONF_WITH_VIDEL || CONF_WITH_APOLLO_68080
     VEC(xbios_58, vsetmode),   /* 58 */
     VEC(xbios_59, vmontype),   /* 59 */
     VEC(xbios_5a, vsetsync),   /* 5a */
