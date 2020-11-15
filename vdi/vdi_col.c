@@ -15,6 +15,10 @@
 #include "xbiosbind.h"
 #include "lineavars.h"
 
+#if CONF_WITH_APOLLO_68080
+#include "..//bios//amiga.h"
+#endif
+
 #define EXTENDED_PALETTE (CONF_WITH_VIDEL || CONF_WITH_TT_SHIFTER)
 
 #if EXTENDED_PALETTE
@@ -138,7 +142,7 @@ static const WORD tt_palette2[240][3] =
     { 267, 133, 0 }, { 267, 67, 0 }, { 1000, 1000, 1000 }, { 0, 0, 0 }
 };
 #endif
-#if CONF_WITH_VIDEL
+#if CONF_WITH_VIDEL ||CONF_WITH_APOLLO_68080
 static const WORD videl_palette1[16][3] =
 {
     { 1000, 1000, 1000 }, { 0, 0, 0 }, { 1000, 0, 0 }, { 0, 1000, 0 },
@@ -146,6 +150,8 @@ static const WORD videl_palette1[16][3] =
     { 733, 733, 733 }, { 533, 533, 533 }, { 667, 0, 0 }, { 0, 667, 0 },
     { 0, 0, 667 }, { 0, 667, 667 }, { 667, 667, 0 }, { 667, 0, 667 }
 };
+#endif
+#if CONF_WITH_VIDEL
 static const WORD videl_palette2[240][3] =
 {
     { 1000, 1000, 1000 }, { 933, 933, 933 }, { 867, 867, 867 }, { 800, 800, 800 },
@@ -464,7 +470,7 @@ static void query_tt_color(WORD colnum,WORD *retval)
 #endif
 
 
-#if CONF_WITH_VIDEL
+#if CONF_WITH_VIDEL ||CONF_WITH_APOLLO_68080
 /* Create videl colour value from VDI colour */
 static LONG vdi2videl(WORD col)
 {
@@ -544,8 +550,10 @@ static void set_color(WORD colnum, WORD *rgb)
     g = rgb[1];
     b = rgb[2];
 
+#if CONF_WITH_VIDEL || CONF_WITH_APOLLO_68080
 #if CONF_WITH_VIDEL
     if (has_videl)
+#endif
     {
         LONG videlrgb;
 
@@ -646,6 +654,9 @@ void init_colors(void)
     /* set up palette */
     memcpy(REQ_COL, st_palette, sizeof(st_palette));    /* use ST as default */
 
+#if CONF_WITH_APOLLO_68080
+    memcpy(REQ_COL, videl_palette1, sizeof(videl_palette1));
+#endif
 #if CONF_WITH_VIDEL
     if (has_videl)
     {
@@ -783,8 +794,10 @@ void vdi_vq_color(Vwk *vwk)
     colnum = INTIN[0];          /* may have been munged on TT system, see above */
     hwreg = MAP_COL[colnum];    /* get hardware register */
 
+#if CONF_WITH_VIDEL || CONF_WITH_APOLLO_68080
 #if CONF_WITH_VIDEL
     if (has_videl)
+#endif
     {
     LONG rgb;
 
