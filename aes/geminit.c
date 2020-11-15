@@ -786,7 +786,7 @@ void gem_main(void)
 
     if (gl_changerez) {
         switch(gl_changerez) {
-#if CONF_WITH_ATARI_VIDEO
+#if CONF_WITH_ATARI_VIDEO || CONF_WITH_APOLLO_68080
         case 1:                     /* ST(e) or TT display */
             new_resolution(gl_nextrez-2, 0);
             break;
