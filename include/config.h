@@ -698,6 +698,9 @@
 #  define CONF_WITH_APOLLO_68080 0
 # else
 #  define CONF_WITH_APOLLO_68080 1
+#  ifndef CONF_DETECT_FIRST_BOOT_WITHOUT_MEMCONF
+#   define CONF_DETECT_FIRST_BOOT_WITHOUT_MEMCONF 1  /* need if rom launch with MapRom */
+#  endif
 # endif
 #endif
 

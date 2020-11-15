@@ -46,6 +46,9 @@
         .extern _run
         .extern _ui_mupb
         .extern amiga_startup
+#if CONF_DETECT_FIRST_BOOT_WITHOUT_MEMCONF
+        .extern _warm_magic
+#endif
 
 // ===========================================================================
 // ==== TEXT segment (TOS image) =============================================
@@ -67,6 +70,9 @@
     reset
 amiga_main:
     // fall through os_entry
+#if CONF_DETECT_FIRST_BOOT_WITHOUT_MEMCONF
+    clr.l   _warm_magic.w
+#endif
 #endif
 
 /*
