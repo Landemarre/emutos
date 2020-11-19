@@ -405,7 +405,7 @@ void vdi_v_opnwk(Vwk * vwk)
 #if CONF_WITH_APOLLO_68080
 
 
-    if ((newrez != Getrez())||(newrez==3)) {
+    if ((newrez != Getrez())||((newrez==3)&&(INTOUT[45] != VsetMode(-1)))) {
         if(newrez==3) Setscreen(-1L, -1L, newrez, INTOUT[45]);
         else Setscreen(-1L, -1L, newrez, 0);
     }
