@@ -28,7 +28,9 @@
 
 #define PLANE_OFFSET    2       /* interleaved planes */
 
-
+#if CONF_WITH_APOLLO_68080
+#define MAX_PLANE_SUPPORTED 8 
+#endif
 /*
  * char_addr - retrieve the address of the source cell
  *
@@ -46,7 +48,9 @@ static UBYTE *char_addr(WORD ch)
 {
     UWORD offs;
 
-    if (v_planes > 8) return NULL;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return NULL;
+#endif
     /* test against limits */
     if (ch >= v_fnt_st) {
         if (ch <= v_fnt_nd) {
@@ -88,7 +92,9 @@ static UBYTE *cell_addr(UWORD x, UWORD y)
 {
     ULONG disx, disy;
 
-    if (v_planes > 8) return NULL;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return NULL;
+#endif
     /* check bounds against screen limits */
     if (x > v_cel_mx)
         x = v_cel_mx;           /* clipped x */
@@ -144,7 +150,9 @@ static void cell_xfer(UBYTE *src, UBYTE *dst)
     int fnt_wr, line_wr;
     int plane;
 
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     fnt_wr = v_fnt_wr;
     line_wr = v_lin_wr;
 
@@ -232,7 +240,9 @@ static void neg_cell(UBYTE *cell)
     int cell_len = v_cel_ht;
     int lin_wr = v_lin_wr;
 
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     v_stat_0 |= M_CRIT;                 /* start of critical section. */
 
     for (plane = v_planes; plane--; ) {
@@ -262,7 +272,9 @@ static void neg_cell(UBYTE *cell)
 
 static BOOL next_cell(void)
 {
-    if (v_planes > 8) return 0;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return 0;
+#endif
     /* check bounds against screen limits */
     if (v_cur_cx == v_cel_mx) {         /* increment cell ptr */
         if (!(v_stat_0 & M_CEOL)) {
@@ -308,7 +320,9 @@ static BOOL next_cell(void)
 
 void invert_cell(int x, int y)
 {
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     /* fetch x and y coords and invert cursor. */
     neg_cell(cell_addr(x, y));
 }
@@ -328,7 +342,9 @@ void invert_cell(int x, int y)
 
 void move_cursor(int x, int y)
 {
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     /* update cell position */
 
     /* clamp x,y to valid ranges */
@@ -398,7 +414,9 @@ void ascii_out(int ch)
     UBYTE * src, * dst;
     BOOL visible;                       /* was the cursor visible? */
 
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     src = char_addr(ch);                /* a0 -> get character source */
     if (src == NULL)
         return;                         /* no valid character */
@@ -472,7 +490,9 @@ void blank_out(int topx, int topy, int botx, int boty)
     int pair, pairs, row, rows, offs;
     UBYTE * addr = cell_addr(topx, topy);   /* running pointer to screen */
 
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     /*
      * # of cell-pairs per row in region - 1
      *
@@ -569,7 +589,9 @@ void scroll_up(UWORD top_line)
     ULONG count;
     UBYTE * src, * dst;
 
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     /* screen base addr + cell y nbr * cell wrap */
     dst = v_bas_ad + (ULONG)top_line * v_cel_wr;
 
@@ -597,7 +619,9 @@ void scroll_down(UWORD start_line)
     ULONG count;
     UBYTE * src, * dst;
 
-    if (v_planes > 8) return;
+#if CONF_WITH_APOLLO_68080
+    if (v_planes > MAX_PLANE_SUPPORTED) return;
+#endif
     /* screen base addr + offset of start line */
     src = v_bas_ad + (ULONG)start_line * v_cel_wr;
 
