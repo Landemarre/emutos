@@ -1256,7 +1256,7 @@ LONG supexec(PFLONG);       /* defined in vectors.S */
 # define LAST_ENTRY 0x8d
 #elif CONF_WITH_DSP
 # define LAST_ENTRY 0x7f
-#elif CONF_WITH_VIDEL
+#elif CONF_WITH_VIDEL  || CONF_WITH_APOLLO_68080
 # define LAST_ENTRY 0x5e
 #elif CONF_WITH_TT_SHIFTER
 # define LAST_ENTRY 0x57
