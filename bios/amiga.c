@@ -537,65 +537,65 @@ ULONG amiga_initial_vram_size(void)
 
 static void amiga_new_saga_set_videomode(UWORD rezmod)
 {
-	switch(rezmod)
-	{
-		case 1:
-		   amiga_screen_width = 320;
-    		   amiga_screen_height = 200;
-		break;
-		case 2:
-			amiga_screen_width = 320;
-    			amiga_screen_height = 240;
-    			
-		break;
-		case 3:
-			amiga_screen_width = 320;
-    			amiga_screen_height = 256;
-		break;
-		case 4:
-			amiga_screen_width = 640;
-    			amiga_screen_height = 400;
-		break;
-		case 5:
-			amiga_screen_width = 640;
-    			amiga_screen_height = 480;
-		break;
-		case 6:
-			amiga_screen_width = 640;
-    			amiga_screen_height = 512;
-		break;
-		case 7:
-			amiga_screen_width = 960;
-    			amiga_screen_height = 540;
-		break;
-		case 8:
-			amiga_screen_width = 480;
-    			amiga_screen_height = 270;
-		break;
-		case 9:
-			amiga_screen_width = 304;
-    			amiga_screen_height = 224;
-		break;
-		case 0x0A:
-			amiga_screen_width = 1280;
-    			amiga_screen_height = 720;
-		break;
-		case 0x0B:
-			amiga_screen_width = 640;
-    			amiga_screen_height = 360;
-		break;
-		default:
-			amiga_screen_width = 960;
-    			amiga_screen_height = 540;
-    		break;
-	}
-	
-	SAGA_VIDEO_PALV4SA=0xFFFFFFL; /* white */
-    	SAGA_VIDEO_PALV4SA=100000000L;          /* black */
-    	SAGA_VIDEO_PALV4SA=0x20000FFL;
-    	SAGA_VIDEO_PALV4SA=0x300FF00L;
-    	SAGA_VIDEO_PALV4SA=0x4FF0000L;
-	
+    switch(rezmod)
+    {
+        case 1:
+           amiga_screen_width = 320;
+               amiga_screen_height = 200;
+        break;
+        case 2:
+            amiga_screen_width = 320;
+                amiga_screen_height = 240;
+                
+        break;
+        case 3:
+            amiga_screen_width = 320;
+                amiga_screen_height = 256;
+        break;
+        case 4:
+            amiga_screen_width = 640;
+                amiga_screen_height = 400;
+        break;
+        case 5:
+            amiga_screen_width = 640;
+                amiga_screen_height = 480;
+        break;
+        case 6:
+            amiga_screen_width = 640;
+                amiga_screen_height = 512;
+        break;
+        case 7:
+            amiga_screen_width = 960;
+                amiga_screen_height = 540;
+        break;
+        case 8:
+            amiga_screen_width = 480;
+                amiga_screen_height = 270;
+        break;
+        case 9:
+            amiga_screen_width = 304;
+                amiga_screen_height = 224;
+        break;
+        case 0x0A:
+            amiga_screen_width = 1280;
+                amiga_screen_height = 720;
+        break;
+        case 0x0B:
+            amiga_screen_width = 640;
+                amiga_screen_height = 360;
+        break;
+        default:
+            amiga_screen_width = 960;
+                amiga_screen_height = 540;
+            break;
+    }
+    
+    SAGA_VIDEO_PALV4SA=0xFFFFFFL; /* white */
+        SAGA_VIDEO_PALV4SA=100000000L;          /* black */
+        SAGA_VIDEO_PALV4SA=0x20000FFL;
+        SAGA_VIDEO_PALV4SA=0x300FF00L;
+        SAGA_VIDEO_PALV4SA=0x4FF0000L;
+    
     if(amiga_mode==0)
     {
         SAGA_VIDEO_mode=(rezmod<<8) + SAGA_VIDEO_FORMAT_STLOW;
@@ -877,7 +877,7 @@ const UBYTE *amiga_physbase(void)
 
 
 WORD amiga_setcolor(WORD colorNum, WORD color)
-{	static WORD oldpalette[256];
+{    static WORD oldpalette[256];
     WORD oldcolor;
 
     ULONG newcolor=(ULONG)color;
@@ -887,8 +887,8 @@ WORD amiga_setcolor(WORD colorNum, WORD color)
     colorNum &= 0x00f;         /* just like real TOS */
     if (colorNum==0 && color!=0)
     {
-    	/*new_*/amiga_setcolor(1, 0);
-    	return oldpalette[colorNum];
+        /*new_*/amiga_setcolor(1, 0);
+        return oldpalette[colorNum];
     }
     oldcolor= oldpalette[colorNum];
     if (HAS_VIDEL || HAS_TT_SHIFTER || HAS_STE_SHIFTER)
@@ -913,30 +913,30 @@ WORD amiga_setcolor(WORD colorNum, WORD color)
 static ULONG sys_palette[256];
 
 WORD vsetrgb(WORD index,WORD count,const ULONG *rgb)
-{	int i=0;
-	count &=0xFF;
-	while(i<count)
-	{
-		sys_palette[index] = *rgb&0xFFFFFFL;
-		SAGA_VIDEO_PALV4SA = ((((ULONG)index)<<24) | (*rgb&0xFFFFFFL));
-		i++;
-		index++;
-		rgb++;
-	}
-	return 0; /* OK */
+{    int i=0;
+    count &=0xFF;
+    while(i<count)
+    {
+        sys_palette[index] = *rgb&0xFFFFFFL;
+        SAGA_VIDEO_PALV4SA = ((((ULONG)index)<<24) | (*rgb&0xFFFFFFL));
+        i++;
+        index++;
+        rgb++;
+    }
+    return 0; /* OK */
 }
 
 WORD vgetrgb(WORD index,WORD count, ULONG *rgb)
-{	int i=0;
-	count &=0xFF;
-	while(i<count)
-	{
-		
-		*rgb++=sys_palette[index];
-		i++;
-		index++;
-	}
-	return 0; /* OK */
+{    int i=0;
+    count &=0xFF;
+    while(i<count)
+    {
+        
+        *rgb++=sys_palette[index];
+        i++;
+        index++;
+    }
+    return 0; /* OK */
 }
 
 /*
@@ -944,19 +944,17 @@ WORD vgetrgb(WORD index,WORD count, ULONG *rgb)
  */
 WORD vmontype(void)
 {
- /*	if((amiga_screen_width==640) && (amiga_screen_height == 400) && (amiga_mode==2)) return 0;
- 	if(amiga_mode<2) return 1;*/
- 	return 2;	
+    return 2;
 }
 
 LONG vgetsize(WORD mode)  
 {
-	return amiga_screen_width * amiga_screen_height * 4; /* a corriger */
+    return amiga_screen_width * amiga_screen_height * 4; /* a corriger */
 }
 
 WORD vsetsync(WORD external)
 {
-	return 0; /* OK nothing to do */
+    return 0; /* OK nothing to do */
 }
 
 WORD vsetmode(WORD mode)
@@ -970,7 +968,7 @@ WORD vsetmode(WORD mode)
 
 /*
 Modes de Saga
-  		-- 1 = 320x200  x2 x2
+                -- 1 = 320x200  x2 x2
                 -- 2 = 320x240  x2 x2
                 -- 3 = 320x256  x2 x2
                 -- 4 = 640x400  x1 x1
@@ -1009,12 +1007,12 @@ void amiga_setrez(WORD rez, WORD videlmode)
             {
                 case VIDEL_4BPP:
                     if(videlmode & VIDEL_COMPAT)
-		    {
-		        new_rez=1; /* 320*200 */
+                    {
+                        new_rez=1; /* 320*200 */
                         if((videlmode & VIDEL_80COL)&&(videlmode & VIDEL_VERTICAL)) /* TT Mid */
-			{
+                        {
                             new_rez=5; /* 640*480 */
-			}
+                        }
 
                     }
                     else
@@ -1128,7 +1126,7 @@ void amiga_setrez(WORD rez, WORD videlmode)
                     {   
                         new_rez=6; /* 640x512 */
                     }
-		    amiga_mode=0;
+            amiga_mode=0;
                 break;
             }
             if(videlmode & VIDEL_OVERSCAN)
@@ -1145,7 +1143,7 @@ void amiga_setrez(WORD rez, WORD videlmode)
             amiga_videlmode = VIDEL_COMPAT|VIDEL_4BPP|VIDEL_80COL|VIDEL_VERTICAL;
             new_rez=5; /* 640x480 */
         break;
-        case TT_HIGH: /* 6 */	/* TTHigh not able on V4SA for the moment maximum value able to achieve in all case amiga_set_videomode() need to be updated if one day possible*/
+        case TT_HIGH: /* 6 */    /* TTHigh not able on V4SA for the moment maximum value able to achieve in all case amiga_set_videomode() need to be updated if one day possible*/
             amiga_mode=2;
             amiga_videlmode = VIDEL_1BPP|VIDEL_80COL|VIDEL_VGA|VIDEL_OVERSCAN;
             new_rez=0x0A; /* 1280x720 */ /* should be 1280*960 */
@@ -1213,13 +1211,13 @@ WORD amiga_vgetmode(void)
     if (amiga_screen_width > 640)
         mode |= VIDEL_VGA;
     if (amiga_screen_height == 480)
-		mode |= VIDEL_VERTICAL;
+        mode |= VIDEL_VERTICAL;
     if ((amiga_screen_height == 450)||(amiga_screen_height == 512))
-		mode |= VIDEL_PAL;
+        mode |= VIDEL_PAL;
     if (amiga_screen_width >= 1280)
-    		mode |= VIDEL_OVERSCAN;
+            mode |= VIDEL_OVERSCAN;
     if (amiga_screen_height == 224)
-    		mode |= VIDEL_NEOGEO;
+            mode |= VIDEL_NEOGEO;
     return mode;
 }
 
