@@ -113,6 +113,11 @@ char *exclude_items[] =
 #if !defined(MACHINE_AMIGA)
     "ADAMIREZ",
 #endif
+#if defined(CONF_WITH_APOLLO_68080)
+    "ADAMIREZ",
+#else
+    "ADSAGREZ",
+#endif
 
 #if !CONF_WITH_WINDOW_ICONS         /* icon-related */
     "ADINSWIN",
