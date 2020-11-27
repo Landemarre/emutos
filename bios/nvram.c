@@ -30,6 +30,11 @@
 #define NVRAM_USER_SIZE 48          /* of which the user may access 48 */
 #define NVRAM_CKSUM     NVRAM_USER_SIZE /* and the last 2 are checksum */
 
+#ifdef MACHINE_AMIGA
+#include "gemdos.h"
+UBYTE virtual_nvram[NVRAM_SIZE];
+#endif
+
 /*
  * on the TT, resetting NVRAM causes TOS3 to zero it.
  * on the Falcon and FireBee, it is set to zeroes except for a small
@@ -43,14 +48,76 @@ const UBYTE nvram_init[] = { 0x00, 0x2f, 0x20, 0xff, 0xff, 0xff };
 
 int has_nvram;
 
+
+#ifdef MACHINE_AMIGA
+static void save_nvram(void)
+{ LONG handle; 
+    handle=dos_create("C:\\GEMSYS\\NVRAM.BIN",0);
+    if(handle>0L)
+    {
+        dos_write((WORD) handle, (LONG) NVRAM_SIZE, (void *)virtual_nvram);
+        dos_close((WORD)handle);
+    }
+}
+
+static void read_nvram(void)
+{
+    LONG handle; 
+    handle=dos_open("C:\\GEMSYS\\NVRAM.BIN",0);
+    
+    if(handle>0L)
+    {
+        dos_read((WORD) handle, (LONG) NVRAM_SIZE, (void *)virtual_nvram);
+        dos_close((WORD)handle);
+    }
+} 
+#endif
+
+static UBYTE read_nvram_byte(int index)
+{
+    if(index<NVRAM_SIZE)
+    {
+#ifdef MACHINE_AMIGA
+        return virtual_nvram[index];
+#else
+        volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
+        volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
+        *addr_reg = index + NVRAM_START;
+        return *data_reg;
+#endif
+    }
+    return 0;
+}
+
+
+
+static void write_nvram_byte(int index, UBYTE value)
+{
+    if(index<NVRAM_SIZE)
+    {
+#ifdef MACHINE_AMIGA
+        virtual_nvram[index]=value;
+#else
+        volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
+        volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
+        *addr_reg = index + NVRAM_START;
+        *data_reg=value;
+#endif
+    }
+}
+
 /*
  * detect_nvram - detect the NVRAM
  */
 void detect_nvram(void)
 {
+#ifndef MACHINE_AMIGA
     if (check_read_byte(NVRAM_ADDR_REG))
         has_nvram = 1;
     else has_nvram = 0;
+#else
+    has_nvram = 1;
+#endif
 }
 
 /*
@@ -58,9 +125,10 @@ void detect_nvram(void)
  */
 UBYTE get_nvram_rtc(int index)
 {
+    int ret_value = 0;
+#ifndef MACHINE_AMIGA
     volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
     volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
-    int ret_value = 0;
 
     if (has_nvram)
     {
@@ -70,6 +138,7 @@ UBYTE get_nvram_rtc(int index)
             ret_value = *data_reg;
         }
     }
+#endif
 
     return ret_value;
 }
@@ -79,6 +148,7 @@ UBYTE get_nvram_rtc(int index)
  */
 void set_nvram_rtc(int index, int data)
 {
+#ifndef MACHINE_AMIGA
     volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
     volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
 
@@ -90,6 +160,7 @@ void set_nvram_rtc(int index, int data)
             *data_reg = data;
         }
     }
+#endif
 }
 
 /*
@@ -97,15 +168,12 @@ void set_nvram_rtc(int index, int data)
  */
 static UWORD compute_sum(void)
 {
-    volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
-    volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
     UBYTE sum;
     int i;
 
     for (i = 0, sum = 0; i < NVRAM_USER_SIZE; i++)
     {
-        *addr_reg = i + NVRAM_START;
-        sum += *data_reg;
+        sum += read_nvram_byte(i);
     }
 
     return MAKE_UWORD(~sum, sum);
@@ -116,14 +184,10 @@ static UWORD compute_sum(void)
  */
 static UWORD get_sum(void)
 {
-    volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
-    volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
     UWORD sum;
 
-    *addr_reg = NVRAM_START + NVRAM_CKSUM;
-    sum = *data_reg << 8;
-    *addr_reg = NVRAM_START + NVRAM_CKSUM + 1;
-    sum |= *data_reg;
+    sum = read_nvram_byte(NVRAM_CKSUM)<<8;
+    sum |= read_nvram_byte(NVRAM_CKSUM+1);
 
     return sum;
 }
@@ -133,13 +197,8 @@ static UWORD get_sum(void)
  */
 static void set_sum(UWORD sum)
 {
-    volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
-    volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
-
-    *addr_reg = NVRAM_START + NVRAM_CKSUM;
-    *data_reg = HIBYTE(sum);
-    *addr_reg = NVRAM_START + NVRAM_CKSUM + 1;
-    *data_reg = LOBYTE(sum);
+    write_nvram_byte(NVRAM_CKSUM,HIBYTE(sum));
+    write_nvram_byte(NVRAM_CKSUM+1,LOBYTE(sum));
 }
 
 /*
@@ -154,9 +213,18 @@ static void set_sum(UWORD sum)
  */
 WORD nvmaccess(WORD type, WORD start, WORD count, UBYTE *buffer)
 {
-    volatile UBYTE *addr_reg = (volatile UBYTE *)NVRAM_ADDR_REG;
-    volatile UBYTE *data_reg = (volatile UBYTE *)NVRAM_DATA_REG;
     int i;
+#ifdef MACHINE_AMIGA
+    static UBYTE already_load=0;  /* we can set static var with 0 only else it is in rom */
+    
+    if(already_load<2)
+    {
+        already_load++;
+        if(already_load<2) return -5; /* can't check on first request, file system not available */
+        read_nvram();
+    }
+    
+#endif
 
     if (!has_nvram)
         return 0x2E;
@@ -165,8 +233,7 @@ WORD nvmaccess(WORD type, WORD start, WORD count, UBYTE *buffer)
     {
         for (i = 0; i < NVRAM_USER_SIZE; i++)
         {
-            *addr_reg = i + NVRAM_START;
-            *data_reg = 0;
+            write_nvram_byte(NVRAM_START,0);
         }
         if (cookie_mch == MCH_TT)
             set_sum(compute_sum());
@@ -192,18 +259,19 @@ WORD nvmaccess(WORD type, WORD start, WORD count, UBYTE *buffer)
             }
             for (i = start; i < start + count; i++)
             {
-                *addr_reg = i + NVRAM_START;
-                *buffer++ = *data_reg;
+                *buffer++ = read_nvram_byte(i);
             }
         }
         break;
     case 1:         /* write */
         for (i = start; i < start + count; i++)
         {
-            *addr_reg = i + NVRAM_START;
-            *data_reg = *buffer++;
+            write_nvram_byte(i,*buffer++);
         }
         set_sum(compute_sum());
+#ifdef MACHINE_AMIGA
+        save_nvram();
+#endif
         break;
     default:
         /* wrong operation code! */

@@ -53,6 +53,7 @@ struct cookie {
 #define MCH_FALCON  0x00030000L
 #define MCH_MILAN_C 0x00040000L
 #define MCH_ARANYM  0x00050000L
+#define MCH_VAMPIRE 0x00060000L
 
 /*
  * values of _VDO cookie

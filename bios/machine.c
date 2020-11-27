@@ -378,7 +378,11 @@ static void setvalue_mch(void)
     else
         cookie_mch = MCH_ST;
 #else
+#if CONF_WITH_APOLLO_68080
+    cookie_mch = MCH_VAMPIRE;
+#else
     cookie_mch = MCH_NOHARD;
+#endif
 #endif /* CONF_ATARI_HARDWARE */
 
     KDEBUG(("cookie_mch = 0x%08lx\n", cookie_mch));

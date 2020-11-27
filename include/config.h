@@ -490,6 +490,9 @@
 # ifndef CONF_WITH_UAE
 #  define CONF_WITH_UAE 1
 # endif
+#ifndef CONF_WITH_NVRAM
+# define CONF_WITH_NVRAM 1
+#endif
 #endif
 
 /*
