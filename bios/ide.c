@@ -37,6 +37,9 @@
 #include "biosmem.h"
 #ifdef MACHINE_AMIGA
 #include "amiga.h"
+#if CONF_WITH_APOLLO_68080
+#define IDECONF *(volatile UWORD*)0xDD1020
+#endif
 #endif
 
 #if CONF_WITH_IDE
@@ -512,7 +515,9 @@ void ide_init(void)
 
     if (!has_ide)
         return;
-
+#if CONF_WITH_APOLLO_68080
+    IDECONF = 0xF000; /* Fast IDE set */
+#endif
 #if CONF_ATARI_HARDWARE && !defined(MACHINE_FIREBEE)
     /* Reject 'ghost' interfaces & detect twisted cables.
      * We wait a max time for BSY to drop on all IDE interface
@@ -537,7 +542,7 @@ void ide_init(void)
     for (i = 0; i < DEVICES_PER_BUS; i++)
         if (ide_identify(i) == 0)
             set_multiple_mode(i,identify.multiple_io_info);
-}
+ }
 
 static int ide_device_exists(WORD dev)
 {
