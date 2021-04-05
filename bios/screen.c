@@ -1058,11 +1058,11 @@ void setscreen(UBYTE *logLoc, const UBYTE *physLoc, WORD rez, WORD videlmode)
         return;
     }
 
-    if ((LONG)logLoc >= 0) {
+    if ((LONG)logLoc > 0) {
         v_bas_ad = logLoc;
         KDEBUG(("v_bas_ad = %p\n", v_bas_ad));
     }
-    if ((LONG)physLoc >= 0) {
+    if ((LONG)physLoc > 0) {
         setphys(physLoc);
     }
 
@@ -1071,7 +1071,12 @@ void setscreen(UBYTE *logLoc, const UBYTE *physLoc, WORD rez, WORD videlmode)
         return;
     }
 
-    if (rez >= 0 && rez < 8) {
+#if CONF_WITH_APOLLO_68080
+    if((rez >= 0 && rez < 8)||(rez==SAGA_REZ))
+#else
+    if (rez >= 0 && rez < 8) 
+#endif
+    {
         /* Wait for the end of display to avoid the plane-shift bug on ST */
         vsync();
 

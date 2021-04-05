@@ -127,6 +127,7 @@ typedef void (*ETV_TIMER_T)(int ms); /* Type of BDOS Event Timer */
 #define ST_MEDIUM      1
 #define ST_LOW         0
 #define FALCON_REZ     3    /* used as a Falcon indicator */
+#define SAGA_REZ     103    /* Saga vampire only */
 
 /* monitor types (from VgetMonitor()) */
 #define MON_MONO       0    /* ST monochrome */

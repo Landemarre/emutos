@@ -529,10 +529,12 @@ UWORD *copper_list;
 #if CONF_WITH_APOLLO_68080
 WORD amiga_videlmode;
 UWORD amiga_mode=0;
+UWORD atari_rez=0;
+UWORD atari_videlmode=0;
 
 ULONG amiga_initial_vram_size(void)
 {
-    return 1280UL * 720UL * 2UL; /* for future possible 16 bits screen formatwhen Emutos will be able to support need ???*/
+    return 1280UL * 720UL * 4UL; /* for future possible 16 bits screen formatwhen Emutos will be able to support need ???*/
 }
 
 static void amiga_new_saga_set_videomode(UWORD rezmod)
@@ -541,110 +543,129 @@ static void amiga_new_saga_set_videomode(UWORD rezmod)
     {
         case 1:
            amiga_screen_width = 320;
-               amiga_screen_height = 200;
+           amiga_screen_height = 200;
         break;
         case 2:
             amiga_screen_width = 320;
-                amiga_screen_height = 240;
-                
+            amiga_screen_height = 240;    
         break;
         case 3:
             amiga_screen_width = 320;
-                amiga_screen_height = 256;
+            amiga_screen_height = 256;
         break;
         case 4:
             amiga_screen_width = 640;
-                amiga_screen_height = 400;
+            amiga_screen_height = 400;
         break;
         case 5:
             amiga_screen_width = 640;
-                amiga_screen_height = 480;
+            amiga_screen_height = 480;
         break;
         case 6:
             amiga_screen_width = 640;
-                amiga_screen_height = 512;
+            amiga_screen_height = 512;
         break;
         case 7:
             amiga_screen_width = 960;
-                amiga_screen_height = 540;
+            amiga_screen_height = 540;
         break;
         case 8:
             amiga_screen_width = 480;
-                amiga_screen_height = 270;
+            amiga_screen_height = 270;
         break;
         case 9:
             amiga_screen_width = 304;
-                amiga_screen_height = 224;
+            amiga_screen_height = 224;
         break;
         case 0x0A:
             amiga_screen_width = 1280;
-                amiga_screen_height = 720;
+            amiga_screen_height = 720;
         break;
         case 0x0B:
             amiga_screen_width = 640;
-                amiga_screen_height = 360;
+            amiga_screen_height = 360;
+        break;
+        case 0x0C:
+            amiga_screen_width = 800;
+            amiga_screen_height = 600;
+        break;
+        case 0x0D:
+            amiga_screen_width = 1024;
+            amiga_screen_height = 768;
+        break;
+        case 0x0E:
+            amiga_screen_width = 720;
+            amiga_screen_height = 576;
         break;
         default:
             amiga_screen_width = 960;
-                amiga_screen_height = 540;
-            break;
+            amiga_screen_height = 540;
+        break;
     }
     
     SAGA_VIDEO_PALV4SA=0xFFFFFFL; /* white */
-        SAGA_VIDEO_PALV4SA=100000000L;          /* black */
-        SAGA_VIDEO_PALV4SA=0x20000FFL;
-        SAGA_VIDEO_PALV4SA=0x300FF00L;
-        SAGA_VIDEO_PALV4SA=0x4FF0000L;
+    SAGA_VIDEO_PALV4SA=100000000L;          /* black */
+    SAGA_VIDEO_PALV4SA=0x20000FFL;
+    SAGA_VIDEO_PALV4SA=0x300FF00L;
+    SAGA_VIDEO_PALV4SA=0x4FF0000L;
     
-    if(amiga_mode==0)
+    if(atari_rez==SAGA_REZ)
     {
-        SAGA_VIDEO_mode=(rezmod<<8) + SAGA_VIDEO_FORMAT_STLOW;
+    	sshiftmod = SAGA_REZ;
+    	SAGA_VIDEO_mode=atari_videlmode&0xF0F;
     }
-    if(amiga_mode==1)
-    {
-        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_STMID;
-     }
-    if(amiga_mode==2)
-    {
-         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_STHIGH;
-     }
-    if(amiga_mode==9)
-    {
-         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_CLUT8;
-    }
-    if(amiga_mode==10)
-    {
-         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_YUV422;
-    }
-    if(amiga_mode==15)
-    {
-         SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB15;
-    }
-    if(amiga_mode==16)
-    {
-        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB16;
-    }
-    if(amiga_mode==24)
-    {
-        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB24;
-    }
-    if(amiga_mode==32)
-    {
-        SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB32;
-    }
-    if (amiga_screen_width == 640 && amiga_screen_height == 400 && amiga_mode==2)
-       sshiftmod = ST_HIGH;
     else
-    if (amiga_screen_width == 640 && amiga_screen_height == 200 && amiga_mode==1)
-       sshiftmod = ST_MEDIUM;
-    else
-    if (/*amiga_screen_width == 640 && amiga_screen_height == 400 &&*/ amiga_mode==1) /* as on new core 640*200 is not possible */
-       sshiftmod = ST_MEDIUM;
-    else
-    if (amiga_screen_width == 320 && amiga_screen_height == 200 && amiga_mode==0)
-       sshiftmod = ST_LOW;
-    else
-       sshiftmod = FALCON_REZ;
+    {
+        if(amiga_mode==0)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) + SAGA_VIDEO_FORMAT_STLOW;
+        }
+        if(amiga_mode==1)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_STMID;
+        }
+        if(amiga_mode==2)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_STHIGH;
+        }
+        if(amiga_mode==9)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_CLUT8;
+        }
+        if(amiga_mode==10)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_YUV422;
+        }
+        if(amiga_mode==15)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB15;
+        }
+        if(amiga_mode==16)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB16;
+        }
+        if(amiga_mode==24)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB24;
+        }
+        if(amiga_mode==32)
+        {
+            SAGA_VIDEO_mode=(rezmod<<8) +SAGA_VIDEO_FORMAT_RGB32;
+        }
+        if (amiga_screen_width == 640 && amiga_screen_height == 400 && amiga_mode==2)
+            sshiftmod = ST_HIGH;
+        else
+        if (amiga_screen_width == 640 && amiga_screen_height == 200 && amiga_mode==1)
+            sshiftmod = ST_MEDIUM;
+        else
+        if (/*amiga_screen_width == 640 && amiga_screen_height == 400 &&*/ amiga_mode==1) /* as on new core 640*200 is not possible */
+            sshiftmod = ST_MEDIUM;
+        else
+        if (amiga_screen_width == 320 && amiga_screen_height == 200 && amiga_mode==0)
+            sshiftmod = ST_LOW;
+        else
+            sshiftmod = FALCON_REZ;
+    }
     amiga_screen_width_in_bytes = amiga_screen_width / 8;   
 } 
 
@@ -663,7 +684,8 @@ WORD amiga_check_moderez(WORD moderez)
     else    /* TT mid for STLow by default */
         moderez = VIDEL_COMPAT|VIDEL_4BPP|VIDEL_80COL|VIDEL_VERTICAL;
 
-    current_mode = amiga_vgetmode();
+    if((atari_rez==SAGA_REZ)) current_mode = atari_videlmode;
+    else current_mode = amiga_vgetmode();
     return_mode = moderez;          /* assume always valid */
     return (return_mode==current_mode)?0:return_mode;
 }
@@ -807,7 +829,8 @@ WORD amiga_check_moderez(WORD moderez)
     if (moderez < 0)                /* ignore other ST video modes */
         return 0;
 
-    current_mode = amiga_vgetmode();
+    if (atari_rez==SAGA_REZ) current_mode = atari_videomode;
+    else current_mode = amiga_vgetmode();
     return_mode = moderez;          /* assume always valid */
     return (return_mode==current_mode)?0:return_mode;
 }
@@ -967,7 +990,7 @@ WORD vsetmode(WORD mode)
 /* End videl Emulation */
 
 /*
-Modes de Saga
+Saga resolution mode
                 -- 1 = 320x200  x2 x2
                 -- 2 = 320x240  x2 x2
                 -- 3 = 320x256  x2 x2
@@ -979,11 +1002,27 @@ Modes de Saga
                 -- 9 = 304x224  x2 x2 for neogeo
                 -- A = 1280x720
                 -- B = 640x360
+                -- C = 800x600
+                -- D = 1024x768
+                -- E = 720x576
+                
+Pixel format
+                -- 1 = 8bit (indexed) 
+                -- 2 = 16bit R5G6B5
+                -- 3 = 15bit 1R5G5B5
+                -- 4 = 24bit R8G8B8
+                -- 5 = 32bit A8R8G8B8
+                -- 6 = YUV
+                -- 8 = PLANAR 1BIT (STHigh format)
+                -- 9 = PLANAR 2BIT (STMid format)
+                -- A = PLANAR 4BIT (STLow format)
 */
 
 void amiga_setrez(WORD rez, WORD videlmode)
 {
     UWORD new_rez;
+    atari_rez=rez;
+    atari_videlmode=videlmode;
     switch(rez)
     {
         case ST_LOW : /* 0 */
@@ -1152,6 +1191,45 @@ void amiga_setrez(WORD rez, WORD videlmode)
             amiga_mode=0; /* should be for 256 color not 16 but Saga not support (November 2020)*/
             amiga_videlmode = VIDEL_4BPP|VIDEL_VERTICAL;
             new_rez=5; /* 640x480 */ /* should be 320*480 */
+        break;
+
+        case SAGA_REZ: /* SAGA like resolution */
+        { unsigned char *sagarez;
+            sagarez=(unsigned char *)&videlmode;
+            new_rez=sagarez[0];
+            switch (sagarez[1])
+            {
+                case 0xA:
+                    amiga_mode=0;
+                    amiga_videlmode = VIDEL_4BPP;
+                break;
+                case 0x9:
+                    amiga_mode=1;
+                    amiga_videlmode = VIDEL_2BPP;
+                break;
+                case 0x8:
+                    amiga_mode=2;
+                    amiga_videlmode = VIDEL_1BPP;
+                break;
+                case 0x5:
+                    amiga_mode=32;
+                    amiga_videlmode = VIDEL_32XRGB;
+                break;
+                case 0x4:
+                    amiga_mode=24;
+                    amiga_videlmode = VIDEL_24RGB;
+                break;
+                case 0x2:
+                    amiga_mode=16;
+                    amiga_videlmode = VIDEL_TRUECOLOR;
+                break;
+                default :
+                    amiga_mode=0;
+                    amiga_videlmode = VIDEL_4BPP;
+                break;
+            }
+          /*  amiga_mode=    */    	
+        }
         break;
         default : 
             amiga_mode=0;
